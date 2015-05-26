@@ -1,0 +1,34 @@
+name:                nagios-plugin-retcond
+version:             0.1.0.0
+synopsis:            Nagios plugin to monitor retcond
+description:         Nagios plugin to generate performance data from
+                     ekg metrics exposed by retcond.
+homepage:            https://github.com/anchor/nagios-plugin-retcond
+license:             BSD3
+license-file:        LICENSE
+author:              Sharif Olorin
+maintainer:          sio@tesser.org
+copyright:           2015 Anchor Systems
+category:            System
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     System.Nagios.Plugin.Retcond
+  build-depends:       base >=4.7 && <4.8,
+                       aeson,
+                       wreq,
+                       nagios-check,
+                       optparse-applicative,
+                       lens
+  hs-source-dirs:      lib
+  default-language:    Haskell2010
+
+executable nagios-plugin-retcond
+  main-is:             Main.hs
+  build-depends:       base >=4.7 && <4.8,
+                       nagios-check,
+                       nagios-plugin-retcond
+  hs-source-dirs:      src
+  default-language:    Haskell2010

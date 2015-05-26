@@ -1,14 +1,17 @@
-{-# LANGUAGE RecordWildcards #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module System.Nagios.Plugin.Retcond where
 
+import Data.Text.Lens
 import Control.Lens
 import Control.Applicative
+import Control.Monad.IO.Class
 import Data.Aeson
 import Network.Wreq
 import System.Nagios.Plugin
-import Options.Applicative       
+import Options.Applicative       hiding (header)
+import qualified Options.Applicative as O
 
 data CheckOpts = CheckOpts
   { checkEkgEndpoint :: String }
@@ -17,7 +20,7 @@ checkOptParser :: ParserInfo CheckOpts
 checkOptParser =  info (helper <*> opts)
               (   fullDesc
                <> progDesc "Nagios check for retcond."
-               <> header   "nagios-plugin-retcond"
+               <> O.header   "nagios-plugin-retcond"
               )
   where
     opts = CheckOpts
@@ -31,10 +34,10 @@ checkOptParser =  info (helper <*> opts)
 checkRetcond :: NagiosPlugin ()
 checkRetcond = do
     CheckOpts{..} <- liftIO $ execParser checkOptParser
-    let reqOpts = defaults & header "Accept" .~ ["application/json"]
+    let reqOpts = header "Accept" .~ ["application/json"] $ defaults
     resp <- liftIO $ getWith reqOpts checkEkgEndpoint
     case resp ^. responseStatus . statusCode of
          200  -> checkRetcond' $ resp ^. responseBody
-         code -> addResult Critical $ "ekg endpoint returned " <> show code
+         code -> addResult Critical $ "ekg endpoint returned " <> (show code ^. packed)
   where
     checkRetcond' bs = undefined

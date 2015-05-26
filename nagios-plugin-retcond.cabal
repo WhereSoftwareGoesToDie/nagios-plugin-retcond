@@ -21,6 +21,7 @@ library
                        wreq,
                        nagios-check,
                        optparse-applicative,
+                       transformers,
                        lens
   hs-source-dirs:      lib
   default-language:    Haskell2010

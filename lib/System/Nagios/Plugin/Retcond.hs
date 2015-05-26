@@ -3,6 +3,8 @@
 
 module System.Nagios.Plugin.Retcond where
 
+import Data.Map (Map)
+import Data.Text (Text)
 import Data.Text.Lens
 import Control.Lens
 import Control.Applicative
@@ -15,6 +17,26 @@ import qualified Options.Applicative as O
 
 data CheckOpts = CheckOpts
   { checkEkgEndpoint :: String }
+
+data DataSourceMeters = DataSourceMeters
+  { sourceNumNotifications :: Integer
+  , sourceNumKeys          :: Integer
+  }
+
+data EntityMeters = EntityMeters
+  { entityNumNotifications :: Integer
+  , entityNumCreates       :: Integer
+  , entityNumUpdates       :: Integer
+  , entityNumDeletes       :: Integer
+  , entityNumConflicts     :: Integer
+  , entityNumKeys          :: Integer
+  , entityDataSourceMeters :: Map Text DataSourceMeters
+  }
+
+data RetconMeters = RetconMeters
+  { entityMeters           :: Map Text EntityMeters
+  , serverNumNotifications :: Integer
+  }
 
 checkOptParser :: ParserInfo CheckOpts
 checkOptParser =  info (helper <*> opts)

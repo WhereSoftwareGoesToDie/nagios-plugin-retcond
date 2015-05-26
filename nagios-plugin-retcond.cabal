@@ -22,6 +22,8 @@ library
                        nagios-check,
                        optparse-applicative,
                        transformers,
+                       containers,
+                       text,
                        lens
   hs-source-dirs:      lib
   default-language:    Haskell2010

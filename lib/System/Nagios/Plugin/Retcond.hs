@@ -24,19 +24,28 @@ data CheckOpts = CheckOpts
 data DataSourceMeters = DataSourceMeters
   { _sourceNumNotifications :: Int64
   , _sourceNumKeys          :: Int64
-  , _sourceName             :: Text
   } deriving (Eq, Show)
 
 makeLenses ''DataSourceMeters
 
-instance ToPerfData DataSourceMeters where
-    toPerfData dsm = let prefix = "source_" <> (dsm ^. sourceName) <> "_" in
+instance FromJSON DataSourceMeters where
+    parseJSON (Object o) = DataSourceMeters <$> o .: "gauge_notifications"
+                                            <*> o .: "gauge_keys"
+    parseJSON _          = fail "DataSourceMeters must be an object"
+
+
+renderDataSourceMeters :: Text
+                       -> Text
+                       -> DataSourceMeters
+                       -> [PerfDatum]
+renderDataSourceMeters entity source dsm =
+    let prefix = "source_" <> entity <> "_" <> source <> "_" in
         [ barePerfDatum (prefix <> "notifications")
-          (IntegralValue (dsm ^. sourceNumNotifications))
-          NullUnit
+                        (IntegralValue (dsm ^. sourceNumNotifications))
+                        NullUnit
         , barePerfDatum (prefix <> "keys")
-          (IntegralValue (dsm ^. sourceNumKeys))
-          NullUnit
+                        (IntegralValue (dsm ^. sourceNumKeys))
+                        NullUnit
         ]
 
 data EntityMeters = EntityMeters
@@ -46,14 +55,26 @@ data EntityMeters = EntityMeters
   , _entityNumDeletes       :: Int64
   , _entityNumConflicts     :: Int64
   , _entityNumKeys          :: Int64
-  , _entityDataSourceMeters :: [DataSourceMeters]
-  , _entityName             :: Text
+  , _entityDataSourceMeters :: Map Text DataSourceMeters
   } deriving (Eq, Show)
 
 makeLenses ''EntityMeters
 
-instance ToPerfData EntityMeters where
-    toPerfData em = let prefix = "entity_" <> (em ^. entityName) <> "_" in
+instance FromJSON EntityMeters where
+    parseJSON (Object o) = EntityMeters <$> o .: "gauge_notifications"
+                                        <*> o .: "counter_creates"
+                                        <*> o .: "counter_updates"
+                                        <*> o .: "counter_deletes"
+                                        <*> o .: "gauge_conflicts"
+                                        <*> o .: "gauge_keys"
+                                        <*> o .: "datasources"
+    parseJSON _          = fail "DataSourceMeters must be an object"
+
+renderEntityMeters :: Text
+                   -> EntityMeters
+                   -> [PerfDatum]
+renderEntityMeters entity em =
+    let prefix = "entity_" <> entity <> "_" in
         [ barePerfDatum (prefix <> "notifications")
                         (IntegralValue (em ^. entityNumNotifications))
                         NullUnit
@@ -75,23 +96,25 @@ instance ToPerfData EntityMeters where
         ]
 
 data RetconMeters = RetconMeters
-  { _entityMeters           :: [EntityMeters]
+  { _entityMeters           :: Map Text EntityMeters
   , _serverNumNotifications :: Int64
   } deriving (Eq, Show)
 
 makeLenses ''RetconMeters
 
 instance FromJSON RetconMeters where
-    parseJSON (Object o) = RetconMeters <$> return []
+    parseJSON (Object o) = RetconMeters <$> o .: "datasources"
                                         <*> o .: "gauge_notifications"
     parseJSON _          = fail "RetconMeters must be an object"
 
 instance ToPerfData RetconMeters where
     toPerfData rm =
-        [ barePerfDatum "notifications"
-                        (IntegralValue (rm ^. serverNumNotifications))
-                        NullUnit
-        ]
+        let base = [ barePerfDatum "notifications"
+                                   (IntegralValue (rm ^. serverNumNotifications))
+                                   NullUnit
+                   ]
+            entities = concat . map (uncurry renderEntityMeters) $ M.assocs (rm ^. entityMeters) in
+        base <> entities
 
 checkOptParser :: ParserInfo CheckOpts
 checkOptParser =  info (helper <*> opts)

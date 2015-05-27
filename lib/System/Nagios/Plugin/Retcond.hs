@@ -1,22 +1,22 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module System.Nagios.Plugin.Retcond where
 
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Text (Text)
-import Data.Text.Lens
-import Data.Int
-import Control.Lens hiding ((.=))
-import Control.Applicative
-import Control.Monad.IO.Class
-import Data.Aeson
-import Network.Wreq
-import System.Nagios.Plugin
-import Options.Applicative       hiding (header)
-import qualified Options.Applicative as O
+import           Control.Applicative
+import           Control.Lens           hiding ((.=))
+import           Control.Monad.IO.Class
+import           Data.Aeson
+import           Data.Int
+import           Data.Map               (Map)
+import qualified Data.Map               as M
+import           Data.Text              (Text)
+import           Data.Text.Lens
+import           Network.Wreq
+import           Options.Applicative    hiding (header)
+import qualified Options.Applicative    as O
+import           System.Nagios.Plugin
 
 data CheckOpts = CheckOpts
   { checkEkgEndpoint :: String }
@@ -163,7 +163,7 @@ checkOptParser =  info (helper <*> opts)
                           <> value "http://localhost:8888"
                           <> help "URI of the ekg endpoint to check."
                          )
-       
+
 checkRetcond :: NagiosPlugin ()
 checkRetcond = do
     CheckOpts{..} <- liftIO $ execParser checkOptParser

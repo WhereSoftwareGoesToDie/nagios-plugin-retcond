@@ -29,6 +29,16 @@ data DataSourceMeters = DataSourceMeters
 
 makeLenses ''DataSourceMeters
 
+instance ToPerfData DataSourceMeters where
+    toPerfData dsm = let prefix = "source_" <> (dsm ^. sourceName) <> "_" in
+        [ barePerfDatum (prefix <> "notifications")
+          (IntegralValue (dsm ^. sourceNumNotifications))
+          NullUnit
+        , barePerfDatum (prefix <> "keys")
+          (IntegralValue (dsm ^. sourceNumKeys))
+          NullUnit
+        ]
+
 data EntityMeters = EntityMeters
   { _entityNumNotifications :: Int64
   , _entityNumCreates       :: Int64
@@ -75,6 +85,13 @@ instance FromJSON RetconMeters where
     parseJSON (Object o) = RetconMeters <$> return []
                                         <*> o .: "gauge_notifications"
     parseJSON _          = fail "RetconMeters must be an object"
+
+instance ToPerfData RetconMeters where
+    toPerfData rm =
+        [ barePerfDatum "notifications"
+                        (IntegralValue (rm ^. serverNumNotifications))
+                        NullUnit
+        ]
 
 checkOptParser :: ParserInfo CheckOpts
 checkOptParser =  info (helper <*> opts)

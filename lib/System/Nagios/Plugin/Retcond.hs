@@ -21,9 +21,61 @@ import qualified Options.Applicative as O
 data CheckOpts = CheckOpts
   { checkEkgEndpoint :: String }
 
+-- I wish ekg exported this. DRY yo.
+data EkgMetricType =
+      CounterType
+    | GaugeType
+    | LabelType
+    | DistributionType
+  deriving (Eq, Show)
+
+-- Distribution and label not yet implemented.
+instance FromJSON EkgMetricType where
+    parseJSON (String s) = case s of
+        "c" -> return CounterType
+        "g" -> return GaugeType
+        x   -> fail $ "Invalid metric type " <> (x ^. unpacked)
+    parseJSON _          = fail "EkgMetricType must be a string"
+
+newtype EkgCounterValue = EkgCounterValue { _counterValue :: Int64 }
+    deriving (Eq, Show)
+
+makeLenses ''EkgCounterValue
+
+instance FromJSON EkgCounterValue where
+    parseJSON (Object o) = do
+        mt <- o .: "type"
+        case mt of
+            CounterType -> EkgCounterValue <$> o .: "val"
+            x           -> fail $ show x <> " is an invalid metric type for EkgCounterValue"
+    parseJSON _          = fail "EkgCounterValue must be an object"
+
+renderCounter :: Text
+              -> EkgCounterValue
+              -> PerfDatum
+renderCounter lbl val = barePerfDatum lbl (IntegralValue (val ^. counterValue)) Counter
+
+newtype EkgGaugeValue = EkgGaugeValue { _gaugeValue :: Double }
+    deriving (Eq, Show)
+
+makeLenses ''EkgGaugeValue
+
+instance FromJSON EkgGaugeValue where
+    parseJSON (Object o) = do
+        mt <- o .: "type"
+        case mt of
+            GaugeType -> EkgGaugeValue <$> o .: "val"
+            x           -> fail $ show x <> " is an invalid metric type for EkgGaugeValue"
+    parseJSON _          = fail "EkgGaugeValue must be an object"
+
+renderGauge :: Text
+              -> EkgGaugeValue
+              -> PerfDatum
+renderGauge lbl val = barePerfDatum lbl (RealValue (val ^. gaugeValue)) NullUnit
+
 data DataSourceMeters = DataSourceMeters
-  { _sourceNumNotifications :: Int64
-  , _sourceNumKeys          :: Int64
+  { _sourceNumNotifications :: EkgGaugeValue
+  , _sourceNumKeys          :: EkgGaugeValue
   } deriving (Eq, Show)
 
 makeLenses ''DataSourceMeters
@@ -40,21 +92,17 @@ renderDataSourceMeters :: Text
                        -> [PerfDatum]
 renderDataSourceMeters entity source dsm =
     let prefix = "source_" <> entity <> "_" <> source <> "_" in
-        [ barePerfDatum (prefix <> "notifications")
-                        (IntegralValue (dsm ^. sourceNumNotifications))
-                        NullUnit
-        , barePerfDatum (prefix <> "keys")
-                        (IntegralValue (dsm ^. sourceNumKeys))
-                        NullUnit
+        [ renderGauge (prefix <> "notifications") (dsm ^. sourceNumNotifications)
+        , renderGauge (prefix <> "keys") (dsm ^. sourceNumKeys)
         ]
 
 data EntityMeters = EntityMeters
-  { _entityNumNotifications :: Int64
-  , _entityNumCreates       :: Int64
-  , _entityNumUpdates       :: Int64
-  , _entityNumDeletes       :: Int64
-  , _entityNumConflicts     :: Int64
-  , _entityNumKeys          :: Int64
+  { _entityNumNotifications :: EkgGaugeValue
+  , _entityNumCreates       :: EkgCounterValue
+  , _entityNumUpdates       :: EkgCounterValue
+  , _entityNumDeletes       :: EkgCounterValue
+  , _entityNumConflicts     :: EkgGaugeValue
+  , _entityNumKeys          :: EkgGaugeValue
   , _entityDataSourceMeters :: Map Text DataSourceMeters
   } deriving (Eq, Show)
 
@@ -75,29 +123,17 @@ renderEntityMeters :: Text
                    -> [PerfDatum]
 renderEntityMeters entity em =
     let prefix = "entity_" <> entity <> "_" in
-        [ barePerfDatum (prefix <> "notifications")
-                        (IntegralValue (em ^. entityNumNotifications))
-                        NullUnit
-        , barePerfDatum (prefix <> "creates")
-                        (IntegralValue (em ^. entityNumCreates))
-                        Counter
-        , barePerfDatum (prefix <> "updates")
-                        (IntegralValue (em ^. entityNumUpdates))
-                        Counter
-        , barePerfDatum (prefix <> "deletes")
-                        (IntegralValue (em ^. entityNumDeletes))
-                        Counter
-        , barePerfDatum (prefix <> "conflicts")
-                        (IntegralValue (em ^. entityNumConflicts))
-                        Counter
-        , barePerfDatum (prefix <> "keys")
-                        (IntegralValue (em ^. entityNumKeys))
-                        NullUnit
+        [ renderGauge (prefix <> "notifications") (em ^. entityNumNotifications)
+        , renderCounter (prefix <> "creates") (em ^. entityNumCreates)
+        , renderCounter (prefix <> "updates") (em ^. entityNumUpdates)
+        , renderCounter (prefix <> "deletes") (em ^. entityNumDeletes)
+        , renderGauge (prefix <> "conflicts") (em ^. entityNumConflicts)
+        , renderGauge (prefix <> "keys") (em ^. entityNumKeys)
         ]
 
 data RetconMeters = RetconMeters
   { _entityMeters           :: Map Text EntityMeters
-  , _serverNumNotifications :: Int64
+  , _serverNumNotifications :: EkgGaugeValue
   } deriving (Eq, Show)
 
 makeLenses ''RetconMeters
@@ -109,10 +145,7 @@ instance FromJSON RetconMeters where
 
 instance ToPerfData RetconMeters where
     toPerfData rm =
-        let base = [ barePerfDatum "notifications"
-                                   (IntegralValue (rm ^. serverNumNotifications))
-                                   NullUnit
-                   ]
+        let base = [ renderGauge "notifications" (rm ^. serverNumNotifications) ]
             entities = concat . map (uncurry renderEntityMeters) $ M.assocs (rm ^. entityMeters) in
         base <> entities
 

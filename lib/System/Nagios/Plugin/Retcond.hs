@@ -142,4 +142,6 @@ checkRetcond = do
   where
     checkRetcond' bs = case (decode bs :: Maybe RetconMeters) of
         Nothing -> addResult Critical "failed to parse ekg output"
-        Just meters -> undefined
+        Just meters -> do
+            addPerfData meters
+            addResult OK "perfdata only"

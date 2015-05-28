@@ -21,7 +21,18 @@ suite =
         (_, validState) <- runIO . runNagiosPlugin' $ checkRetcond' validJson
         let (validStatus, validOutput) = finishState validState
 
-        it "exits successfully given valid input" $
+        let invalidJson = "{ \"foo\": 42 }"
+        (_, borkedState) <- runIO . runNagiosPlugin' $ checkRetcond' invalidJson
+        let (borkedStatus, borkedOutput) = finishState borkedState
+
+        it "exits with OK status given valid input" $
             validStatus @?= OK
+
         it "outputs the correct perfdata" $
             validOutput @?= "OK: perfdata only | notifications=2394562348956.0;;;; entity_aleph_notifications=23.0;;;; entity_aleph_creates=0c;;;; entity_aleph_updates=923457c;;;; entity_aleph_deletes=2345c;;;; entity_aleph_conflicts=2.0;;;; entity_aleph_internal_keys=1234.0;;;; source_aleph_beth_notifications=235.0;;;; source_aleph_beth_foreign_keys=567.0;;;; source_aleph_gimel_notifications=2345.0;;;; source_aleph_gimel_foreign_keys=235123.0;;;;"
+
+        it "exits with CRITICAL status given invalid input" $
+           borkedStatus @?= Critical
+
+        it "outputs correct failure message on invalid input" $
+           borkedOutput @?= "CRITICAL: failed to parse ekg output"

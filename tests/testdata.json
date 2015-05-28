@@ -1,0 +1,62 @@
+{
+    "ekg": {
+        "server_timestamp_ms": {
+            "type": "c",
+            "val": 1432773400449
+        }
+    },
+    "entities": {
+        "aleph": {
+            "conflicts": {
+                "type": "g",
+                "val": 2
+            },
+            "creates": {
+                "type": "c",
+                "val": 0
+            },
+            "deletes": {
+                "type": "c",
+                "val": 2345
+            },
+            "updates": {
+                "type": "c",
+                "val": 923457
+            },
+            "datasources": {
+                "beth": {
+                    "foreign_keys": {
+                        "type": "g",
+                        "val": 567
+                    },
+                    "notifications": {
+                        "type": "g",
+                        "val": 235
+                    }
+                },
+                "gimel": {
+                    "foreign_keys": {
+                        "type": "g",
+                        "val": 235123
+                    },
+                    "notifications": {
+                        "type": "g",
+                        "val": 2345
+                    }
+                }
+            },
+            "internal_keys": {
+                "type": "g",
+                "val": 1234
+            },
+            "notifications": {
+                "type": "g",
+                "val": 23
+            }
+        }
+    },
+    "notifications": {
+        "type": "g",
+        "val": 2394562348956
+    }
+}

@@ -1,5 +1,5 @@
 name:                nagios-plugin-retcond
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            Nagios plugin to monitor retcond
 description:         Nagios plugin to generate performance data from
                      ekg metrics exposed by retcond.

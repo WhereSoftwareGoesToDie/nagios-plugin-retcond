@@ -82,7 +82,7 @@ makeLenses ''DataSourceMeters
 
 instance FromJSON DataSourceMeters where
     parseJSON (Object o) = DataSourceMeters <$> o .: "notifications"
-                                            <*> o .: "keys"
+                                            <*> o .: "foreign_keys"
     parseJSON _          = fail "DataSourceMeters must be an object"
 
 
@@ -93,7 +93,7 @@ renderDataSourceMeters :: Text
 renderDataSourceMeters entity source dsm =
     let prefix = "source_" <> entity <> "_" <> source <> "_" in
         [ renderGauge (prefix <> "notifications") (dsm ^. sourceNumNotifications)
-        , renderGauge (prefix <> "keys") (dsm ^. sourceNumKeys)
+        , renderGauge (prefix <> "foreign_keys") (dsm ^. sourceNumKeys)
         ]
 
 data EntityMeters = EntityMeters
@@ -114,7 +114,7 @@ instance FromJSON EntityMeters where
                                         <*> o .: "updates"
                                         <*> o .: "deletes"
                                         <*> o .: "conflicts"
-                                        <*> o .: "keys"
+                                        <*> o .: "internal_keys"
                                         <*> o .: "datasources"
     parseJSON _          = fail "DataSourceMeters must be an object"
 
@@ -128,7 +128,7 @@ renderEntityMeters entity em =
         , renderCounter (prefix <> "updates") (em ^. entityNumUpdates)
         , renderCounter (prefix <> "deletes") (em ^. entityNumDeletes)
         , renderGauge (prefix <> "conflicts") (em ^. entityNumConflicts)
-        , renderGauge (prefix <> "keys") (em ^. entityNumKeys)
+        , renderGauge (prefix <> "internal_keys") (em ^. entityNumKeys)
         ]
 
 data RetconMeters = RetconMeters

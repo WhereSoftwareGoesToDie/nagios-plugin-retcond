@@ -139,7 +139,7 @@ data RetconMeters = RetconMeters
 makeLenses ''RetconMeters
 
 instance FromJSON RetconMeters where
-    parseJSON (Object o) = RetconMeters <$> o .: "datasources"
+    parseJSON (Object o) = RetconMeters <$> o .: "entities"
                                         <*> o .: "notifications"
     parseJSON _          = fail "RetconMeters must be an object"
 

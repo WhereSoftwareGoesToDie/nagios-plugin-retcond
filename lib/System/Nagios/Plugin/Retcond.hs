@@ -123,14 +123,18 @@ renderEntityMeters :: Text
                    -> EntityMeters
                    -> [PerfDatum]
 renderEntityMeters entity em =
-    let prefix = "entity_" <> entity <> "_" in
-        [ renderGauge (prefix <> "notifications") (em ^. entityNumNotifications)
-        , renderCounter (prefix <> "creates") (em ^. entityNumCreates)
-        , renderCounter (prefix <> "updates") (em ^. entityNumUpdates)
-        , renderCounter (prefix <> "deletes") (em ^. entityNumDeletes)
-        , renderGauge (prefix <> "conflicts") (em ^. entityNumConflicts)
-        , renderGauge (prefix <> "internal_keys") (em ^. entityNumKeys)
-        ]
+    let prefix = "entity_" <> entity <> "_"
+        base = [ renderGauge (prefix <> "notifications") (em ^. entityNumNotifications)
+               , renderCounter (prefix <> "creates") (em ^. entityNumCreates)
+               , renderCounter (prefix <> "updates") (em ^. entityNumUpdates)
+               , renderCounter (prefix <> "deletes") (em ^. entityNumDeletes)
+               , renderGauge (prefix <> "conflicts") (em ^. entityNumConflicts)
+               , renderGauge (prefix <> "internal_keys") (em ^. entityNumKeys)
+               ]
+        source_items = M.assocs (em ^. entityDataSourceMeters)
+        sources = concatMap (uncurry (renderDataSourceMeters entity)) source_items in
+    base <> sources
+
 
 data RetconMeters = RetconMeters
   { _entityMeters           :: Map Text EntityMeters

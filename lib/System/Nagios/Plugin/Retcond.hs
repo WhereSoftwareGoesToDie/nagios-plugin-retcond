@@ -146,7 +146,7 @@ instance FromJSON RetconMeters where
 instance ToPerfData RetconMeters where
     toPerfData rm =
         let base = [ renderGauge "notifications" (rm ^. serverNumNotifications) ]
-            entities = concat . map (uncurry renderEntityMeters) $ M.assocs (rm ^. entityMeters) in
+            entities = concatMap (uncurry renderEntityMeters) $ M.assocs (rm ^. entityMeters) in
         base <> entities
 
 checkOptParser :: ParserInfo CheckOpts

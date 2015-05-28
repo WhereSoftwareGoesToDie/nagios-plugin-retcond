@@ -8,6 +8,7 @@ import           Control.Applicative
 import           Control.Lens           hiding ((.=))
 import           Control.Monad.IO.Class
 import           Data.Aeson
+import           Data.ByteString.Lazy   (ByteString)
 import           Data.Int
 import           Data.Map               (Map)
 import qualified Data.Map               as M
@@ -172,9 +173,10 @@ checkRetcond = do
     case resp ^. responseStatus . statusCode of
         200  -> checkRetcond' $ resp ^. responseBody
         code -> addResult Critical $ "ekg endpoint returned " <> (show code ^. packed)
-  where
-    checkRetcond' bs = case (decode bs :: Maybe RetconMeters) of
-        Nothing -> addResult Critical "failed to parse ekg output"
-        Just meters -> do
-            addPerfData meters
-            addResult OK "perfdata only"
+
+checkRetcond' :: ByteString -> NagiosPlugin ()
+checkRetcond' bs = case (decode bs :: Maybe RetconMeters) of
+    Nothing -> addResult Critical "failed to parse ekg output"
+    Just meters -> do
+        addPerfData meters
+        addResult OK "perfdata only"

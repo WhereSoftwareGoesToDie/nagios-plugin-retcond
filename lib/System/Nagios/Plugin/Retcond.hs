@@ -81,8 +81,8 @@ data DataSourceMeters = DataSourceMeters
 makeLenses ''DataSourceMeters
 
 instance FromJSON DataSourceMeters where
-    parseJSON (Object o) = DataSourceMeters <$> o .: "gauge_notifications"
-                                            <*> o .: "gauge_keys"
+    parseJSON (Object o) = DataSourceMeters <$> o .: "notifications"
+                                            <*> o .: "keys"
     parseJSON _          = fail "DataSourceMeters must be an object"
 
 
@@ -109,12 +109,12 @@ data EntityMeters = EntityMeters
 makeLenses ''EntityMeters
 
 instance FromJSON EntityMeters where
-    parseJSON (Object o) = EntityMeters <$> o .: "gauge_notifications"
-                                        <*> o .: "counter_creates"
-                                        <*> o .: "counter_updates"
-                                        <*> o .: "counter_deletes"
-                                        <*> o .: "gauge_conflicts"
-                                        <*> o .: "gauge_keys"
+    parseJSON (Object o) = EntityMeters <$> o .: "notifications"
+                                        <*> o .: "creates"
+                                        <*> o .: "updates"
+                                        <*> o .: "deletes"
+                                        <*> o .: "conflicts"
+                                        <*> o .: "keys"
                                         <*> o .: "datasources"
     parseJSON _          = fail "DataSourceMeters must be an object"
 
@@ -140,7 +140,7 @@ makeLenses ''RetconMeters
 
 instance FromJSON RetconMeters where
     parseJSON (Object o) = RetconMeters <$> o .: "datasources"
-                                        <*> o .: "gauge_notifications"
+                                        <*> o .: "notifications"
     parseJSON _          = fail "RetconMeters must be an object"
 
 instance ToPerfData RetconMeters where
